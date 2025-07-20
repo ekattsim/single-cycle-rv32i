@@ -1,0 +1,3 @@
+#+title: Single-Cycle RISC-V Implementation in VHDL
+
+Hardware implementaiton of the minimal, single-cycle RISC-V core design from [[https://www.elsevier.com/books-and-journals/book-companion/9780128203316][Patterson and Hennessey's Computer Organization and Design]]. My main goal with this project is to familiarize myself with the various FPGA implementation details before implementing the 5-stage pipelined RV32I unprivileged CPU.
