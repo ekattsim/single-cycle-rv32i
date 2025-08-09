@@ -31,8 +31,6 @@ architecture asyncBRAM_TB_ARCH of asyncBRAM_TB is
 		constant R7 : std_logic_vector(4 downto 0) := "00111";
 		constant R8 : std_logic_vector(4 downto 0) := "01000";
 
-		-- Define the array of test vectors. The driver in the testbench
-		-- will iterate through this array, applying one vector per clock cycle.
 		constant VECTORS : testArray_t := (
 			-- =====================================================================
 			-- Test 0: Initial State. Ensure all write enables are low.
@@ -167,8 +165,6 @@ architecture asyncBRAM_TB_ARCH of asyncBRAM_TB is
 				rd         => R0,
 				writeEnReg => '0'
 				)
-		 -- =====================================================================
-		 -- << Add more complex test vectors here as needed >>
 			);
 	begin
 		return VECTORS;
@@ -220,7 +216,7 @@ begin
 	end process CORE_CLOCK;
 
 	--============================================================================
-	--  BRAM timing constraint
+	--  BRAM timing constraint is 5 times faster to make it feel async
 	--============================================================================
 	BRAM_CLOCK: process
 	begin
