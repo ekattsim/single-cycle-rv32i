@@ -189,18 +189,13 @@ architecture asyncBRAM_TB_ARCH of asyncBRAM_TB is
 	signal rs1: std_logic_vector(4 downto 0);
 	signal rs2: std_logic_vector(4 downto 0);
 	signal rd: std_logic_vector(4 downto 0);
+	signal dataOutRam: std_logic_vector(31 downto 0);
 	signal writeEnReg: std_logic;
 
-	signal dataOutRam: std_logic_vector(31 downto 0);
-	signal rs1UData: unsigned(31 downto 0);
-	signal rs2UData: unsigned(31 downto 0);
 	signal rs1Data: std_logic_vector(31 downto 0);
 	signal rs2Data: std_logic_vector(31 downto 0);
 
 begin
-
-    rs1Data <= std_logic_vector(rs1UData);
-    rs2Data <= std_logic_vector(rs2UData);
 
 	--============================================================================
 	--  Reset
@@ -257,13 +252,13 @@ begin
 		port map (
 			reset => reset,
 			clock => coreClock,
-			rs1 => unsigned(rs1),
-			rs2 => unsigned(rs2),
-			rd => unsigned(rd),
-			writeData => unsigned(dataOutRam),
+			rs1 => rs1,
+			rs2 => rs2,
+			rd => rd,
+			writeData => dataOutRam,
 			writeEn => writeEnReg,
-			rs1Data => rs1UData,
-			rs2Data => rs2UData
+			rs1Data => rs1Data,
+			rs2Data => rs2Data
 	);
 
 	INPUT_DRIVER: process(reset, coreClock)

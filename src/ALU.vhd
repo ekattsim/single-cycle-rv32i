@@ -7,18 +7,18 @@ entity ALU is
 		XLEN: integer
 	);
 	port (
-		operand1, operand2: in unsigned(XLEN-1 downto 0);
+		operand1, operand2: in std_logic_vector(XLEN-1 downto 0);
 		opcode: in std_logic_vector(1 downto 0);
 		zero: out std_logic;
-		result: out unsigned(XLEN-1 downto 0)
+		result: out std_logic_vector(XLEN-1 downto 0)
 	);
 end entity ALU;
 
 architecture ALU_ARCH of ALU is
 
-	signal logicResult: unsigned(XLEN-1 downto 0);
-	signal arithResult: unsigned(XLEN-1 downto 0);
-	signal result_s: unsigned(XLEN-1 downto 0);
+	signal logicResult: std_logic_vector(XLEN-1 downto 0);
+	signal arithResult: std_logic_vector(XLEN-1 downto 0);
+	signal result_s: std_logic_vector(XLEN-1 downto 0);
 	signal opcode0: std_logic;
 
 begin
@@ -36,8 +36,8 @@ begin
 	ARITH_UNIT: process(operand1, operand2, opcode0)
 	begin
 		case (opcode0) is
-			when '0' => arithResult <= operand1 + operand2;
-			when others => arithResult <= operand1 - operand2;
+			when '0' => arithResult <= std_logic_vector(unsigned(operand1) + unsigned(operand2));
+			when others => arithResult <= std_logic_vector(unsigned(operand1) - unsigned(operand2));
 		end case;
 	end process;
 
@@ -45,7 +45,7 @@ begin
 		result_s <= logicResult when '0',
 					arithResult when others;
 
-	ZERO_CHECK: zero <= '1' when (result_s=0) else '0';
+	ZERO_CHECK: zero <= '1' when (unsigned(result_s)=0) else '0';
 	result <= result_s;
 
 end ALU_ARCH;
