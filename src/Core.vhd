@@ -126,8 +126,8 @@ begin
         end case;
     end process IMM_GEN;
 
-	-- calculate branch instruction address
-	branchAddr <= std_logic_vector(signed(currInstAddr) + signed(immediate));
+    -- calculate branch instruction address
+    branchAddr <= std_logic_vector(signed(currInstAddr) + signed(immediate));
 
     -- purpose: generate control signals for the datapath
     -- type   : combinational
@@ -195,7 +195,7 @@ begin
         immediate when '1',
         rs2Data   when others;
 
-	ALU_1: entity work.ALU
+    ALU_1 : entity work.ALU
         generic map (
             XLEN => XLEN)
         port map (
@@ -205,9 +205,9 @@ begin
             zero     => zero,
             result   => ALUResult);
 
-	-- misc dataflow statements
-	memEn <= or memWrite or memRead;
-	branchTaken <= zero and branch;
+    -- misc dataflow statements
+    memEn       <= or memWrite or memRead;
+    branchTaken <= zero and branch;
 
     ALU_MEM_MUX : with memToReg select
         regWriteData <=
