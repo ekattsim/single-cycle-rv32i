@@ -3,10 +3,18 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity Core is
-	port (
-		reset       : in std_logic;
-		dataPathClk : in std_logic;
-		bramClk     : in std_logic);
+    port (
+        reset : in std_logic;
+        clock : in std_logic;
+
+        currInstAddr : out std_logic_vector(31 downto 0);
+        inst         : in  std_logic_vector(31 downto 0);
+
+        memEn     : out std_logic;
+        memWrite  : out std_logic_vector(3 downto 0);
+        ALUResult : out std_logic_vector(31 downto 0);
+        rs2Data   : out std_logic_vector(31 downto 0);
+        data      : in  std_logic_vector(31 downto 0));
 end entity Core;
 
 architecture Core_ARCH of Core is
@@ -20,8 +28,6 @@ architecture Core_ARCH of Core is
     -- fetch (IF)
     signal seqNextAddr  : word;
     signal nextInstAddr : word;
-    signal currInstAddr : word;
-    signal inst         : word;
 
     -- decode (ID)
     type opcode_t is record
@@ -42,30 +48,24 @@ architecture Core_ARCH of Core is
 
     signal regWrite : std_logic;
     signal ALUOp    : std_logic_vector(1 downto 0);
-    signal memWrite : std_logic_vector(3 downto 0);
     signal memRead  : std_logic;
     signal ALUSrc   : std_logic;
     signal memToReg : std_logic;
     signal branch   : std_logic;
-    signal memEn    : std_logic;
 
     signal rs1       : word;
     signal rs2       : word;
     signal rd        : word;
-    signal rs2Data   : word;
     signal operand1  : word;
     signal operand2  : word;
     signal ALUOpCode : std_logic_vector(1 downto 0);
 
     -- execute (EX)
-    signal zero      : std_logic;
-    signal ALUResult : word;
-
+    signal zero        : std_logic;
     signal branchTaken : std_logic;
     signal branchAddr  : word;
 
     -- memory (MEM)
-    signal data : word;
 
     -- writeback (WB)
     signal regWriteData : word;
@@ -82,37 +82,17 @@ begin
             XLEN => XLEN)
         port map (
             reset    => reset,
-            clock    => dataPathClk,
+            clock    => clock,
             nextInst => nextInstAddr,
             currInst => currInstAddr);
 
 	-- calculate next sequential instruction address
     seqNextAddr <= std_logic_vector(unsigned(currInstAddr) + to_unsigned(4, XLEN));
 
-    BRAM : entity work.blk_mem_gen_0
-        port map (
-            -- instruction memory port
-            rsta  => reset,
-            clka  => bramClk,
-            ena   => '1',
-            wea   => (others => '0'),
-            addra => currInstAddr,
-            dina  => (others => '0'),
-            douta => inst,
-
-            -- data memory port
-            rstb  => reset,
-            clkb  => bramClk,
-            enb   => memEn,
-            web   => memWrite,
-            addrb => ALUResult,
-            dinb  => rs2Data,
-            doutb => data);
-
     RegFile_1 : entity work.RegFile
         port map (
             reset     => reset,
-            clock     => dataPathClk,
+            clock     => clock,
             rs1       => inst(19 downto 15),
             rs2       => inst(24 downto 20),
             rd        => inst(11 downto 7),
