@@ -36,8 +36,8 @@ begin
     ARITH_UNIT : process(operand1, operand2, opcode0)
     begin
         case (opcode0) is
-            when '0'    => arithResult <= std_logic_vector(unsigned(operand1) + unsigned(operand2));
-            when others => arithResult <= std_logic_vector(unsigned(operand1) - unsigned(operand2));
+            when '0'    => arithResult <= std_logic_vector(signed(operand1) + signed(operand2));
+            when others => arithResult <= std_logic_vector(signed(operand1) - signed(operand2));
         end case;
     end process;
 

@@ -26,8 +26,9 @@ architecture Core_ARCH of Core is
     subtype word is std_logic_vector(XLEN-1 downto 0);
 
     -- fetch (IF)
-    signal seqNextAddr  : word;
-    signal nextInstAddr : word;
+    signal seqNextAddr    : word;
+    signal nextInstAddr   : word;
+    signal currInstAddr_s : word;
 
     -- decode (ID)
     type opcode_t is record
@@ -46,12 +47,14 @@ architecture Core_ARCH of Core is
 
     signal immediate : word;
 
-    signal regWrite : std_logic;
-    signal ALUOp    : std_logic_vector(1 downto 0);
-    signal memRead  : std_logic;
-    signal ALUSrc   : std_logic;
-    signal memToReg : std_logic;
-    signal branch   : std_logic;
+    signal regWrite   : std_logic;
+    signal ALUOp      : std_logic_vector(1 downto 0);
+    signal memRead    : std_logic;
+    signal ALUSrc     : std_logic;
+    signal memToReg   : std_logic;
+    signal branch     : std_logic;
+    signal memEn_s    : std_logic;
+    signal memWrite_s : std_logic_vector(3 downto 0);
 
     signal rs1       : word;
     signal rs2       : word;
@@ -61,6 +64,8 @@ architecture Core_ARCH of Core is
     signal ALUOpCode : std_logic_vector(1 downto 0);
 
     -- execute (EX)
+    signal ALUResult_s : word;
+    signal rs2Data_s   : word;
     signal zero        : std_logic;
     signal branchTaken : std_logic;
     signal branchAddr  : word;
@@ -71,6 +76,10 @@ architecture Core_ARCH of Core is
     signal regWriteData : word;
 
 begin
+
+    memWrite  <= memWrite_s;
+    ALUResult <= ALUResult_s;
+    rs2Data   <= rs2Data_s;
 
     NEXT_INST_MUX : with branchTaken select
         nextInstAddr <=
@@ -84,10 +93,12 @@ begin
             reset    => reset,
             clock    => clock,
             nextInst => nextInstAddr,
-            currInst => currInstAddr);
+            currInst => currInstAddr_s);
 
-	-- calculate next sequential instruction address
-    seqNextAddr <= std_logic_vector(unsigned(currInstAddr) + to_unsigned(4, XLEN));
+    currInstAddr <= currInstAddr_s;
+
+    -- calculate next sequential instruction address
+    seqNextAddr <= std_logic_vector(unsigned(currInstAddr_s) + to_unsigned(4, XLEN));
 
     RegFile_1 : entity work.RegFile
         port map (
@@ -99,7 +110,7 @@ begin
             writeData => regWriteData,
             writeEn   => regWrite,
             rs1Data   => operand1,
-            rs2Data   => rs2Data);
+            rs2Data   => rs2Data_s);
 
     -- purpose: extract and sign extend the immediate value from the instruction
     -- type   : combinational
@@ -127,22 +138,26 @@ begin
     end process IMM_GEN;
 
     -- calculate branch instruction address
-    branchAddr <= std_logic_vector(signed(currInstAddr) + signed(immediate));
+    branchAddr <= std_logic_vector(signed(currInstAddr_s) + signed(immediate));
+    
+    -- decode instruction
+    opcode <= inst(6 downto 0);
+    functFields <= inst(31 downto 25) & inst(14 downto 12);
 
     -- purpose: generate control signals for the datapath
     -- type   : combinational
     -- inputs : opcode
-    -- outputs: regWrite, ALUOp, memWrite, memRead, ALUSrc, memToReg, branch
+    -- outputs: regWrite, ALUOp, memWrite_s, memRead, ALUSrc, memToReg, branch
     CONTROL : process (opcode) is
     begin
         -- set defaults to avoid latches
-        regWrite <= '0';
-        ALUOp    <= (others => '0');  	-- "00" means add
-        memWrite <= (others => '0');
-        memRead  <= '0';
-        ALUSrc   <= '0';
-        memToReg <= '0';
-        branch   <= '0';
+        regWrite   <= '0';
+        ALUOp      <= (others => '0');  -- "00" means add
+        memWrite_s <= (others => '0');
+        memRead    <= '0';
+        ALUSrc     <= '0';
+        memToReg   <= '0';
+        branch     <= '0';
 
         case opcode is
             when opcodes.r_type =>
@@ -156,8 +171,8 @@ begin
                 memToReg <= '1';
 
             when opcodes.s_type =>
-                memWrite <= (others => '1');
-                ALUSrc   <= '1';
+                memWrite_s <= (others => '1');
+                ALUSrc     <= '1';
 
             when opcodes.sb_type =>
                 ALUOp  <= "01";  		-- "01" means subtract
@@ -193,7 +208,7 @@ begin
     ALU_OP2_MUX : with ALUSrc select
         operand2 <=
         immediate when '1',
-        rs2Data   when others;
+        rs2Data_s when others;
 
     ALU_1 : entity work.ALU
         generic map (
@@ -203,15 +218,16 @@ begin
             operand2 => operand2,
             opcode   => ALUOpCode,
             zero     => zero,
-            result   => ALUResult);
+            result   => ALUResult_s);
 
     -- misc dataflow statements
-    memEn       <= or memWrite or memRead;
+    memEn_s     <= or memWrite_s or memRead;
     branchTaken <= zero and branch;
+    memEn       <= memEn_s;
 
     ALU_MEM_MUX : with memToReg select
         regWriteData <=
-        data      when '1',
-        ALUResult when others;
+        data        when '1',
+        ALUResult_s when others;
 
 end Core_ARCH;

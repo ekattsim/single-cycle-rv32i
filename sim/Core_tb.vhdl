@@ -20,23 +20,23 @@ architecture Core_tb_arch of Core_tb is
     constant memContents : ram_t :=
         (
         (addr => X"00000000", data => X"19002503"),
-        (addr => X"00000001", data => X"19402583"),
-        (addr => X"00000002", data => X"00b57633"),
-        (addr => X"00000003", data => X"18c02c23"),
-        (addr => X"00000004", data => X"00b566b3"),
-        (addr => X"00000005", data => X"18d02e23"),
-        (addr => X"00000006", data => X"00b50733"),
-        (addr => X"00000007", data => X"1ae02023"),
-        (addr => X"00000008", data => X"40b507b3"),
-        (addr => X"00000009", data => X"1af02223"),
-        (addr => X"0000000A", data => X"feb50667"),
-        (addr => X"0000000B", data => X"18002c23"),
-        (addr => X"0000000C", data => X"18002e23"),
-        (addr => X"0000000D", data => X"1a002023"),
-        (addr => X"0000000E", data => X"1a002223"),
-        (addr => X"0000000F", data => X"00000067"),
-        (addr => X"00000064", data => X"00000000"),
-        (addr => X"00000065", data => X"00000000")
+        (addr => X"00000004", data => X"19402583"),
+        (addr => X"00000008", data => X"00b57633"),
+        (addr => X"0000000C", data => X"18c02c23"),
+        (addr => X"00000010", data => X"00b566b3"),
+        (addr => X"00000014", data => X"18D02E23"),
+        (addr => X"00000018", data => X"00b50733"),
+        (addr => X"0000001C", data => X"1ae02023"),
+        (addr => X"00000020", data => X"40b507b3"),
+        (addr => X"00000024", data => X"1af02223"),
+        (addr => X"00000028", data => X"FEB506E7"),
+        (addr => X"0000002C", data => X"18002c23"),
+        (addr => X"00000030", data => X"18002e23"),
+        (addr => X"00000034", data => X"1a002023"),
+        (addr => X"00000038", data => X"1a002223"),
+        (addr => X"0000003C", data => X"00000067"),
+        (addr => X"00000190", data => X"00000000"),
+        (addr => X"00000194", data => X"00000000")
         );
 
     -- component ports
@@ -60,6 +60,7 @@ architecture Core_tb_arch of Core_tb is
     signal bram_addra : word;
     signal bram_wea   : std_logic_vector(3 downto 0);
     signal bram_dina  : word;
+    signal bram_douta : word;
 
     -- Clock signals
     signal coreClockEn : std_logic := '0';
@@ -81,6 +82,11 @@ begin
             bram_addra <= core_instAddr;
             bram_wea   <= "0000";  -- Core only reads from instruction port
             bram_dina  <= (others => '0');
+            if coreClockEn = '1' then
+                inst <= bram_douta;
+            else
+                inst <= (others => '0');
+            end if;
         end if;
     end process;
 
@@ -93,7 +99,7 @@ begin
             wea   => bram_wea,
             addra => bram_addra,
             dina  => bram_dina,
-            douta => inst,
+            douta => bram_douta,
 
             -- data memory port
             rstb  => reset,
@@ -154,7 +160,7 @@ begin
             tb_wea   <= "0000";
             tb_addr  <= addr;
             wait for 4 ns;
-            data_out := inst;
+            data_out := bram_douta;
         end procedure;
 
         procedure initialize_system is
@@ -172,7 +178,6 @@ begin
             for i in memContents'range loop
                 write_mem(memContents(i).addr, memContents(i).data);
             end loop;
-            tb_wea <= (others => '0');
             report "Program loading complete.";
         end procedure;
 
@@ -180,12 +185,12 @@ begin
         constant VAL1_NE   : word := X"AAAAAAAA";
         constant VAL2_NE   : word := X"55555555";
         constant VAL_EQ    : word := X"12345678";
-        constant ADDR_VAL1 : word := std_logic_vector(to_unsigned(100, 32));
-        constant ADDR_VAL2 : word := std_logic_vector(to_unsigned(101, 32));
-        constant ADDR_AND  : word := std_logic_vector(to_unsigned(102, 32));
-        constant ADDR_OR   : word := std_logic_vector(to_unsigned(103, 32));
-        constant ADDR_ADD  : word := std_logic_vector(to_unsigned(104, 32));
-        constant ADDR_SUB  : word := std_logic_vector(to_unsigned(105, 32));
+        constant ADDR_VAL1 : word := std_logic_vector(to_unsigned(400, 32));
+        constant ADDR_VAL2 : word := std_logic_vector(to_unsigned(404, 32));
+        constant ADDR_AND  : word := std_logic_vector(to_unsigned(408, 32));
+        constant ADDR_OR   : word := std_logic_vector(to_unsigned(412, 32));
+        constant ADDR_ADD  : word := std_logic_vector(to_unsigned(416, 32));
+        constant ADDR_SUB  : word := std_logic_vector(to_unsigned(420, 32));
 
     begin
         report "Starting Testbench Simulation...";
@@ -198,6 +203,7 @@ begin
 
         report "Releasing memory control to Core and enabling clock.";
         tb_mem_grant <= '0';  			-- Give control to the Core
+        wait for 5 ns;
         coreClockEn  <= '1';
         wait for 200 ns;
         coreClockEn  <= '0';
@@ -223,6 +229,7 @@ begin
 
         report "Releasing memory control to Core and enabling clock.";
         tb_mem_grant <= '0';  			-- Give control to the Core
+        wait for 5 ns;
         coreClockEn  <= '1';
         wait for 200 ns;
         coreClockEn  <= '0';
